@@ -47,7 +47,7 @@ static int smabluetooth_encapsulate(smabluetooth_packet_t *packet, uint8_t *buf)
     buf[0] = 0x7e;
     buf[1] = (uint8_t)size;
     buf[2] = 0x00;
-    buf[3] = buf[0] ^ buf[1] ^ buf[2] ^ buf[3];
+    buf[3] = buf[0] ^ buf[1] ^ buf[2];
 
     for (i = 0; i < 6; i++) {
         buf[4 + i] = packet->header.mac_src[i];
