@@ -1,4 +1,4 @@
-/*
+  /*
  *   Pvlib - Smabluetooth implementation
  *
  *   Copyright (C) 2011
@@ -47,7 +47,7 @@ static int smabluetooth_encapsulate(smabluetooth_packet_t *packet, uint8_t *buf)
     buf[0] = 0x7e;
     buf[1] = (uint8_t)size;
     buf[2] = 0x00;
-    buf[3] = (uint8_t)size ^ 0x7e;
+    buf[3] = buf[0] ^ buf[1] ^ buf[2];
 
     for (i = 0; i < 6; i++) {
         buf[4 + i] = packet->header.mac_src[i];
@@ -80,12 +80,13 @@ static int parse_header(smabluetooth_header_t *header, uint8_t *buf, int buf_len
         return -1;
     }
 
-    len = buf[1];
-    if ((buf[3] ^ 0x7e) != len) {
+
+    if (buf[0] ^ buf[1] ^ buf[2] ^ buf[3]) {
         LOG_ERROR("Broken header!");
         return -1;
     }
 
+    len = buf[1];
     if (len < HEADER_SIZE) {
         LOG_ERROR("Broken header!");
         return -1;
