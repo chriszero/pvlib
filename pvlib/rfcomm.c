@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/select.h>
@@ -112,42 +113,42 @@ connection_t *rfcomm_open(const char *address)
 
     dev_id = hci_get_route(NULL);
     if (dev_id < 0) {
-        LOG_ERROR("Failed finding bluetooth device!");
+        LOG_ERROR("Failed finding bluetooth device: %s!", strerror(errno));
         return NULL;
     }
 
     s = hci_open_dev(dev_id);
     if (s < 0) {
-        LOG_ERROR("Opening bluetooth device failed.");
+        LOG_ERROR("Opening bluetooth device failed: %s!", strerror(errno));
         return NULL;
     }
 
     rfcomm = malloc(sizeof(*rfcomm));
 
     if (str2ba(address, (bdaddr_t*)rfcomm->dst_mac) < 0) {
-        LOG_ERROR("Failed reading device bluetooth address.");
+        LOG_ERROR("Failed reading device bluetooth address: %s!", strerror(errno));
         goto err;
     }
 
     if (hci_read_local_name(s, 128,rfcomm->src_name, 100) < 0) {
-        LOG_INFO("Failed reading local bluetooth device name. No name set?");
+        LOG_INFO("Failed reading local bluetooth device name: %s!", strerror(errno));
         rfcomm->src_name[0] = '\0';
     }
 
     if (hci_read_bd_addr(s, (bdaddr_t*)rfcomm->src_mac, 1000) < 0) {
-        LOG_ERROR("Failed reading local mac address!");
+        LOG_ERROR("Failed reading local mac address, %s!", strerror(errno));
         goto err;
     }
 
     if (hci_read_remote_name(s, (bdaddr_t*)rfcomm->dst_mac, 128, rfcomm->dst_name, 5000) < 0) {
-        LOG_INFO("Failed reading remote name");
-        rfcomm->dst_name[0] = '\0';
+        LOG_ERROR("Failed reading remote name: %s", strerror(errno));
+        goto err;
     }
 
     hci_close_dev(s);
     s = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
     if (s < 0) {
-        LOG_ERROR("Failed opening bluetooth socket.");
+        LOG_ERROR("Failed opening bluetooth socket: %s", strerror(errno));
         return NULL;
     }
 
@@ -159,7 +160,7 @@ connection_t *rfcomm_open(const char *address)
     }
 
     if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        LOG_ERROR("Failed connecting to remote.");
+        LOG_ERROR("Failed connecting to remote: %s", strerror(errno));
         goto err;
     }
 
